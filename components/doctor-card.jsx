@@ -64,12 +64,12 @@ const DoctorCard = ({doctor}) => {
 
             <Button 
               asChild 
-              className="w-full bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 text-white font-medium py-3 px-4 rounded-xl shadow-lg hover:shadow-xl hover:shadow-emerald-500/25 transition-all duration-300 group/btn border-0 relative overflow-hidden"
+              className="w-full bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 font-medium py-3 px-4 rounded-xl shadow-lg hover:shadow-xl hover:shadow-emerald-500/25 transition-all duration-300 group/btn border-0 relative overflow-hidden"
             >
               <Link href={`/doctors/${doctor.specialty}/${doctor.id}`}>
                 <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/10 to-white/0 translate-x-[-100%] group-hover/btn:translate-x-[100%] transition-transform duration-700" />
                 <Calendar className='h-4 w-4 mr-2.5 relative z-10' />
-                <span className="relative z-10">Book Appointment</span>
+                <span className="relative z-10">Check Availability</span>
               </Link>
             </Button>
           </div>
