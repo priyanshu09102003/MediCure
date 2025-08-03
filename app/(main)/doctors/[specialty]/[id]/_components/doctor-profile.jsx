@@ -214,7 +214,7 @@ const DoctorProfileComponent = ({doctor , availableDays}) => {
                             
                             days = {availableDays}
 
-                            onSelectedSlot = {handleSlotSelect}
+                            onSelectSlot = {handleSlotSelect}
                             
                             />}
 

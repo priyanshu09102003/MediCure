@@ -4,7 +4,8 @@ import React, { useState } from 'react'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { format } from 'date-fns';
 import { Card, CardContent } from '@/components/ui/card';
-import { Clock } from 'lucide-react';
+import { CalendarCheck, Clock } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
 const SlotPicker = ({days , onSelectSlot}) => {
     const [selectedSlot , setSelectedSlot] = useState(null);
@@ -141,6 +142,15 @@ const SlotPicker = ({days , onSelectSlot}) => {
                     ))}
                     
                 </Tabs>
+
+                <div className='flex justify-end mt-4'>
+                    <Button className="bg-emerald-600 hover:bg-emerald-700 cursor-pointer"
+                    disabled = {!selectedSlot}
+                    onClick = {confirmSelection}
+                    >
+                        Book Slot  <CalendarCheck className='ml-2 h-4 w-4' />
+                    </Button>
+                </div>
             </CardContent>
         </Card>
     </div>

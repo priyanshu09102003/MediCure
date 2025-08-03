@@ -7,7 +7,7 @@ import { format } from "date-fns";
 
 // Define credit allocations per plan
 const PLAN_CREDITS = {
-  free_user: 0, // Basic plan: 2 credits
+  free_user: 0, // Basic plan: 0 credits
   standard: 10, // Standard plan: 10 credits per month
   premium: 24, // Premium plan: 24 credits per month
 };
@@ -61,7 +61,7 @@ export async function checkAndAllocateCredits(user) {
     const currentMonth = format(new Date(), "yyyy-MM");
 
     // If there's a transaction this month, check if it's for the same plan
-    if (user.transactions.length > 0) {
+    if (user.transactions && user.transactions.length > 0) {
       const latestTransaction = user.transactions[0];
       const transactionMonth = format(
         new Date(latestTransaction.createdAt),
@@ -119,82 +119,82 @@ export async function checkAndAllocateCredits(user) {
   }
 }
 
-export async function deductCreditsForAppointments(userId, doctorId){
+/**
+ * Deducts credits for booking an appointment
+ */
+export async function deductCreditsForAppointment(userId, doctorId) {
   try {
+    console.log("Starting credit deduction for user:", userId, "doctor:", doctorId);
+
     const user = await db.user.findUnique({
-      where:{id: userId}
+      where: { id: userId },
     });
 
     const doctor = await db.user.findUnique({
-      where:{id: doctorId}
-    })
+      where: { id: doctorId },
+    });
 
-    if (user.credits < APPOINTMENT_CREDIT_COST) {
-      throw new Error("Insufficient credits to book an appointment");
+    // Check if user exists
+    if (!user) {
+      throw new Error("User not found");
     }
 
+    console.log("User found with credits:", user.credits);
+
+    // Check if doctor exists
     if (!doctor) {
       throw new Error("Doctor not found");
     }
 
+    console.log("Doctor found:", doctor.name);
+
+    // Ensure user has sufficient credits
+    if (user.credits < APPOINTMENT_CREDIT_COST) {
+      throw new Error("Insufficient credits to book an appointment");
+    }
+
+    // Deduct credits from patient and add to doctor
     const result = await db.$transaction(async (tx) => {
+      // Create transaction record for patient (deduction)
       await tx.creditTransaction.create({
-        data:{
+        data: {
           userId: user.id,
           amount: -APPOINTMENT_CREDIT_COST,
           type: "APPOINTMENT_DEDUCTION",
-        }
+        },
       });
 
-      //Create the transaction for DOCTOR (addition)
-
-      await tx.creditTransaction.create({
-
-        data:{
-          userId: doctor.id,
-          amount: APPOINTMENT_CREDIT_COST,
-          type : "APPOINTMENT_DEDUCTION"
+      // Update patient's credit balance (decrement)
+      const updatedUser = await tx.user.update({
+        where: {
+          id: user.id,
         },
-
+        data: {
+          credits: {
+            decrement: APPOINTMENT_CREDIT_COST,
+          },
+        },
       });
 
-      //Update the credit balance of the user(Decrement)
-     const updateCreditBalance = await tx.user.update({
-      where:{
-        id: user.id
-      },
-
-      data:{
-        credits:{
-          decrement: APPOINTMENT_CREDIT_COST
-        }
-      }
-     });
-
-
-     //Update the credit balance of the DOCTOR (Increment)
-
-     await tx.user.update({
-      where:{
-        id: doctor.id
-      },
-
-      data:{
-        credits:{
-          increment: APPOINTMENT_CREDIT_COST
+      // Update doctor's credit balance (increment)
+      await tx.user.update({
+        where: {
+          id: doctor.id,
         },
-      }
-     });
+        data: {
+          credits: {
+            increment: APPOINTMENT_CREDIT_COST,
+          },
+        },
+      });
 
-
-     return updatedUser;
+      return updatedUser;
     });
 
-    return {success: true, user: result}
-  
+    console.log("Credit deduction successful");
+    return { success: true, user: result };
   } catch (error) {
-
-    return {success: false, error: error.message}
-    
+    console.error("Failed to deduct credits:", error);
+    return { success: false, error: error.message };
   }
-} 
+}
