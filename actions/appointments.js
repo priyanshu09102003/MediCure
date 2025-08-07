@@ -8,6 +8,7 @@ import { revalidatePath } from "next/cache";
 import { Auth } from "@vonage/auth";
 import { Vonage } from "@vonage/server-sdk";
 
+
 const credentials = new Auth({
     applicationId: process.env.NEXT_PUBLIC_VONAGE_APPLICATION_ID,
     privateKey: process.env.VONAGE_PRIVATE_KEY
@@ -331,5 +332,100 @@ async function createVideoSession() {
     } catch (error) {
         console.error("Failed to create video session:", error);
         throw new Error("Failed to create a video session");
+    }
+}
+
+//Server action to generate the video token for consultation
+
+export async function generateVideoToken(formData){
+    const {userId} = await auth();
+
+    if(!userId){
+        throw new Error("Unauthorized");
+    }
+
+    try {
+
+        const user = await db.user.findUnique({
+            where:{
+                clerkUserId: userId,
+            },
+        });
+
+        if(!user){
+            throw new Error("User not found");
+        }
+
+        const appointmentId = formData.get("appointmentId");
+
+        const appointment = await db.appointment.findUnique({
+            where:{
+                id: appointmentId,
+            },
+        });
+
+        if(!appointment){
+            throw new Error("Appointment not found");
+        }
+
+        if(appointment.doctorId !== user.id && appointment.patientId !== user.id){
+            throw new Error("You are not authorized to join this call");
+        }
+
+        if(appointment.status !== "SCHEDULED"){
+            throw new Error("This appointment is not correctly scheduled");
+        }
+
+
+        // Verify the appointment is within a valid time range (e.g., starting 5 minutes before scheduled time)
+    const now = new Date();
+    const appointmentTime = new Date(appointment.startTime);
+    const timeDifference = (appointmentTime - now) / (1000 * 60); // difference in minutes
+
+    if (timeDifference > 30) {
+      throw new Error(
+        "The call will be available 30 minutes before the scheduled time"
+      );
+    }
+
+    // Generate a token for the video session
+    // Token expires 2 hours after the appointment start time
+    const appointmentEndTime = new Date(appointment.endTime);
+    const expirationTime =
+      Math.floor(appointmentEndTime.getTime() / 1000) + 60 * 60; // 1 hour after end time
+
+    // Use user's name and role as connection data
+    const connectionData = JSON.stringify({
+      name: user.name,
+      role: user.role,
+      userId: user.id,
+    });
+
+    const token = vonage.video.generateClientToken(appointment.videoSessionId, {
+        role: "publisher",
+        expireTime: expirationTime,
+        data: connectionData,
+    });
+
+    await db.appointment.update({
+        where:{
+            id: appointmentId,
+        },
+
+        data:{
+            videoSessionToken: token
+        }
+    });
+
+    return{
+        success: true,
+        videoSessionId: appointment.videoSessionId,
+        token: token,
+    };
+
+
+        
+    } catch (error) {
+        throw  new Error("Failed to generate the video token" + error.message);
     }
 }
