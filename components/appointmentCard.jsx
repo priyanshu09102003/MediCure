@@ -3,7 +3,7 @@
 import { generateVideoToken } from '@/actions/appointments';
 import { addAppointmentNotes, cancelAppointment, markAppointmentCompleted } from '@/actions/doctor';
 import useFetch from '@/hooks/use-fetch';
-import { Calendar, CheckCircle, Clock, Loader2, Stethoscope, User } from 'lucide-react';
+import { Calendar, CheckCircle, Clock, Edit, Loader2, Stethoscope, User, Video } from 'lucide-react';
 import React, { useEffect, useState } from 'react'
 import { Card, CardContent } from './ui/card';
 import { format } from 'date-fns';
@@ -16,12 +16,17 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
+import { useRouter } from 'next/navigation';
+import { Textarea } from './ui/textarea';
+import { toast } from 'sonner';
 
 
 const AppointmentCard = ({appointmentInfo , userRole}) => {
     const [open , setOpen] = useState(false);
     const [action , setAction] = useState(null);
     const [notes, setNotes] = useState(appointmentInfo.notes || "");
+    
+    const router = useRouter();
 
     //Calling the server actions for different actions
 
@@ -104,6 +109,54 @@ const AppointmentCard = ({appointmentInfo , userRole}) => {
             setOpen(false);
         }
     }, [completeData]);
+
+    const isAppointmentActive = () => {
+        const now = new Date();
+        const appointmentTime = new Date(appointmentInfo.startTime);
+        const apppointmentEndTime = new Date(appointmentInfo.endTime);
+
+        // Can join 30minutes before the start until endtime
+
+        return (
+            (appointmentTime.getTime() - now.getTime() <= 30*60*1000 && now <appointmentTime) || (now>=appointmentTime && now <= apppointmentEndTime)
+        )
+    };
+
+    const handleJoinVideoCall = async () => {
+        if(tokenLoading) return;
+
+        setAction("video");
+
+        const formData = new FormData();
+        formData.append("appointmentId" , appointmentInfo.id);
+        await submitTokenRequest(formData)
+    }
+
+    useEffect(() => {
+        if(tokenData?.success){
+            router.push(
+                `/video-call?sessionId=${tokenData.videoSessionId}&token=${tokenData.token}&appointmentId=${appointmentInfo.id}`
+            )
+        }
+
+    }, [tokenData, appointmentInfo.id])
+
+    const handleSaveNotes = async() => {
+        if(notesLoading || userRole !== "DOCTOR") return;
+
+        const formData = new FormData();
+
+        formData.append("appointmentId", appointmentInfo.id);
+        formData.append("notes" , notes);
+        await submitNotes(formData);
+    }
+
+    useEffect(() => {
+        if(notesData?.success){
+            toast.success("Notes saved successfully");
+            setAction(null);
+        }
+    }, [notesData]);
 
 
   return (
@@ -330,8 +383,121 @@ const AppointmentCard = ({appointmentInfo , userRole}) => {
                             <h4 className='text-sm font-medium text-muted-foreground'>
                                 Video Consultation
                             </h4>
+                            <Button className="w-full  bg-emerald-600 hover:bg-emerald-700"
+                            disabled = {
+                                !isAppointmentActive() || action === "video" || tokenLoading
+                            }
+
+                            onClick = {handleJoinVideoCall}
+                            >
+
+                                {tokenLoading || action === "video" ? (
+                                    <>
+                                    <Loader2 className='mr-2 h-4 w-4 animate-spin' />
+                                    Preparing Video Consultation ...
+                                    </>
+                                ) : (
+                                    <>
+                                        <Video className = "h-4 w-4 mr-2" />
+                                        {isAppointmentActive()
+                                        ? "Join Video Call"
+                                        : "Video call will be available 30 minutes before the appointment"
+                                        }
+                                    </>
+                                )}
+
+                            </Button>
                         </div>
                     )}
+
+
+                    <div className='space-y-2'>
+
+                        <div className='flex items-center justify-between'>
+                            <h4 className='text-sm font-medium text-muted-foreground'>
+                                Doctor's Notes
+                            </h4>
+
+                            {userRole === "DOCTOR" && action !== "notes" && appointmentInfo.status !== "CANCELLED" && 
+                            (
+                                <Button
+                                size="sm"
+                                variant="ghost"
+                                onClick = {() => setAction("notes")}
+                                className="h-7 cursor-pointer text-emerald-400 hover:text-emerald-300 hover:bg-emerald-900/20"
+                                >
+
+                                    <Edit className='h-3.5 w-3,5 mr-1' />
+                                    {appointmentInfo.notes? "Edit" : "Add"}
+
+                                </Button>
+                            )
+                            }
+                        </div>
+
+                        {userRole === "DOCTOR" && action === "notes" ? 
+                        (<div className='space-y-3'>
+                            <Textarea 
+                                value = {notes}
+                                onChange = {(e) => setNotes(e.target.value)}
+                                placeholder = "Enter your clinical notes here..."
+                                className="bg-background border-emerald-900/20 min-h-[100px]"
+                            />
+
+                            <div className='flex justify-end space-x-2'>
+                                <Button
+                                    type = "button"
+                                    variant="destructive"
+                                    size="sm"
+                                    onClick = {() => {
+                                        setAction(null);
+                                        setNotes(appointmentInfo.notes || "");
+                                    }}
+                                    disabled = {notesLoading}
+                                    className="cursor-pointer"
+                                >
+                                    Cancel
+                                </Button>
+
+                                <Button size="sm" onClick={handleSaveNotes}
+                                    disabled = {notesLoading}
+                                    className="bg-emerald-600 hover:bg-emerald-700 cursor-pointer"
+                                    >
+
+                                        {notesLoading ? (
+                                            <>
+                                                <Loader2 className='mr-2 h-3.5 w-3.5 animate-spin' />
+                                                Saving ...
+                                            </>
+                                        ): (
+                                            "Save Notes"
+                                        )}
+                                    
+                                </Button>
+
+                            </div>
+
+                        </div>)
+                        :
+                        (
+                            <div className='p-3 rounded-md bg-muted/20 border border-emerald-900/20 min-h-[80px]'>
+                                {appointmentInfo.notes ? (
+                                    <p>
+                                        {appointmentInfo.notes}
+                                    </p>
+                                ): (
+                                    <p className='text-muted-foreground italic'>
+                                        No notes yet
+                                    </p>
+                                )}
+
+                            </div>
+                        )
+                    }
+
+                    </div>
+
+                    
 
                 </div>
                    
