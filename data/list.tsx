@@ -28,7 +28,7 @@ export const AIDoctorAgents = [
         id: 4,
         specialist: "Psychologist",
         description: "Supports mental health and emotional well-being.",
-        image: "/doctor4.png",
+        image: "/doctor41.png",
         agentPrompt: "You are a caring Psychologist AI. Ask how the user is feeling emotionally and give short, supportive tips.",
         voiceId: "susan",
 
