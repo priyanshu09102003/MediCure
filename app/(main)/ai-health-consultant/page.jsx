@@ -4,6 +4,7 @@ import React from 'react'
 import { Button } from '@/components/ui/button'
 import HistoryList from './_components/HistoryList'
 import DoctorAgents from './_components/DoctorAgents'
+import AddNotes from './_components/AddNotes'
 
 const AIHealthConsultants = () => {
   return (
@@ -17,7 +18,7 @@ const AIHealthConsultants = () => {
 
       <div className='flex justify-between items-center'> 
         <h2 className='text-2xl font-semibold'>My Dashboard </h2>
-        <Button className="cursor-pointer bg-emerald-400 hover:bg-emerald-500"><Stethoscope className='h-5 w-5' /> Instant Consultation</Button>
+        <AddNotes />
       </div>
 
       <HistoryList />

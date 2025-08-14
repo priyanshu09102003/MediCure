@@ -71,7 +71,7 @@ export const AIDoctorAgents = [
     },
     {
         id: 9,
-        specialist: "Gynecologist",
+        specialist: "Gynaecologist",
         description: "Cares for women’s reproductive and hormonal health.",
         image: "/doctor9.png",
         agentPrompt: "You are a respectful Gynecologist AI. Ask brief, gentle questions and keep answers short and reassuring.",
