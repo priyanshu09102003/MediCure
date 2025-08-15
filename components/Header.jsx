@@ -127,7 +127,7 @@ const Header = async () => {
                         <DropdownMenuItem asChild>
                           <Link href="/hospital-locator" className="flex items-center gap-2">
                             <Map className="h-4 w-4" />
-                            Hospital Locator
+                            Medical Facilities
                           </Link>
                         </DropdownMenuItem>
                       </DropdownMenuContent>
@@ -156,7 +156,7 @@ const Header = async () => {
                         <DropdownMenuItem asChild>
                           <Link href="/hospital-locator" className="flex items-center gap-2">
                             <Map className="h-4 w-4" />
-                            Hospital Locator
+                            Medical Facilities
                           </Link>
                         </DropdownMenuItem>
                       </DropdownMenuContent>
