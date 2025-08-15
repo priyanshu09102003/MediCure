@@ -2,6 +2,8 @@ import PageHeader from '@/components/page-header';
 import { MapIcon } from 'lucide-react';
 import React from 'react'
 import CategoryList from './_components/categoryList';
+import RangeSelector from './_components/RangeSelector';
+import SelectRating from './_components/SelectRating';
 
 const HospitalLocatorPage = () => {
   return (
@@ -20,6 +22,8 @@ const HospitalLocatorPage = () => {
 
           <div className='col-span-1'>
             <CategoryList />
+            <RangeSelector />
+            <SelectRating />
           </div>
           {/* Realtime-Map */}
           <div className='col-span-3'>
@@ -32,6 +36,8 @@ const HospitalLocatorPage = () => {
           {/* Categories Section */}
           <div>
             <CategoryList />
+            <RangeSelector />
+            <SelectRating />
           </div>
 
           {/* Map Section */}
